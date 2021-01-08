@@ -3,8 +3,9 @@
 from EasyClangComplete.plugin.utils import output_panel_handler
 from unittest import TestCase
 
-import sublime
+import time
 import imp
+import sublime
 
 imp.reload(output_panel_handler)
 
@@ -24,15 +25,28 @@ class TestOutputPanelHandler(TestCase):
         OutputPanelHandler.show("hello world")
         window = sublime.active_window()
         self.assertIsNotNone(window.active_panel())
-        self.assertEquals(window.active_panel(), "output.ECC")
-        panel_view = window.find_output_panel(OutputPanelHandler._PANEL_TAG)
+        self.assertEqual(window.active_panel(), OutputPanelHandler.PANEL_NAME)
+        panel_view = window.find_output_panel(OutputPanelHandler.PANEL_TAG)
         contents = panel_view.substr(sublime.Region(0, panel_view.size()))
-        self.assertEquals(contents, "hello world")
+        self.assertEqual(contents, "hello world")
 
     def test_panel_closing(self):
         """Test that we can close a panel."""
         OutputPanelHandler.show("hello world")
         window = sublime.active_window()
-        self.assertEquals(window.active_panel(), "output.ECC")
+        self.assertEqual(window.active_panel(), OutputPanelHandler.PANEL_NAME)
         OutputPanelHandler.hide_panel()
         self.assertIsNone(window.active_panel())
+
+    def test_not_closing_panel(self):
+        """Test that we don't close a panel with a wrong name."""
+        window = sublime.active_window()
+        current_panel = window.active_panel()
+        if not current_panel:
+            window.run_command("show_panel", {"panel": "output.UnitTesting"})
+            time.sleep(0.2)
+        self.assertIsNotNone(current_panel)
+        self.assertNotEqual(current_panel, OutputPanelHandler.PANEL_NAME)
+        OutputPanelHandler.hide_panel()
+        self.assertIsNotNone(window.active_panel())
+        self.assertEqual(current_panel, window.active_panel())
